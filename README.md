@@ -2,7 +2,7 @@
 
 **Describe a feature in one sentence, and AgentOps builds it like a small software team:** it writes the requirements, the design and the tests first, then writes the code, checks it in a Docker sandbox, and asks you before anything is merged.
 
-> **Status:** built and tested offline, with AI-written code running only in a sandbox (Docker locally, a sealed Lambda function on AWS). Deployable to AWS Lambda with Terraform and GitHub Actions ([infra/README.md](infra/README.md)). Not built yet: the SDLC-vs-one-shot benchmark and a real GitHub PR (the PR is written locally for now). See [PROJECT.md](PROJECT.md) section 0.
+> **Status:** built and tested offline, with AI-written code running only in a sandbox (Docker locally, a sealed Lambda function on AWS). Deployed to AWS Lambda with Terraform and GitHub Actions ([infra/README.md](infra/README.md)); **[try the live demo](https://ncf7tzviny6x7qkw7aaxk7xszq0lvnbk.lambda-url.ap-south-1.on.aws/)** (a recorded replay of the AI's replies; the sandbox, checks and shop are real). Not built yet: the SDLC-vs-one-shot benchmark and a real GitHub PR (the PR is written locally for now). See [PROJECT.md](PROJECT.md) section 0.
 
 ## The demo: one sentence in, a working feature out
 
@@ -30,6 +30,8 @@ cp .env.example .env                         # offline replay, 3 workers
 Open http://localhost:8820 and follow the four steps above. To use the real model instead of the offline replay: set `LLM_MODE=live` and `LLM_API_KEY` in `.env` (NVIDIA's free API works).
 
 ## Deploy it to AWS
+
+Live demo: https://ncf7tzviny6x7qkw7aaxk7xszq0lvnbk.lambda-url.ap-south-1.on.aws/ (offline replay, 30 runs a day).
 
 `infra/` is Terraform for AWS Lambda; `.github/workflows/deploy.yml` deploys every push to `main` that passes CI. Four functions: the API (the same FastAPI app, with a streaming function URL), a worker that is woken when there is work, a sandbox in a VPC with no internet route for the gates, and a preview that serves the merged shop. No NAT gateway, load balancer or RDS, so nothing is billed by the hour; bring any Postgres. The defaults are the offline replay and 30 runs a day. Steps: [infra/README.md](infra/README.md).
 

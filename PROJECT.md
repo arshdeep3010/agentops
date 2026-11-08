@@ -1,6 +1,6 @@
 # AgentOps: everything about the project
 
-> **Status:** milestone 1 (the durable engine) and milestone 2 (the SDLC pipeline) are **built and tested**: see section 0. The ShopLite coupon task has run live on NVIDIA Nemotron and merged (7 Nov 2026), and a demo video of that run exists. It's a public repo (github.com/arshdeep3010/agentops) and **deployable** to AWS Lambda with Terraform and GitHub Actions (section 0, "AWS deployment"); not applied to an AWS account yet. The benchmark (sections 8.1–8.3) and a real GitHub PR are **not built yet**.
+> **Status:** milestone 1 (the durable engine) and milestone 2 (the SDLC pipeline) are **built and tested**: see section 0. The ShopLite coupon task has run live on NVIDIA Nemotron and merged (7 Nov 2026), and a demo video of that run exists. It's a public repo (github.com/arshdeep3010/agentops) and ****deployed** to AWS Lambda with Terraform and GitHub Actions (section 0, "AWS deployment"). The public demo runs the offline replay of the coupon task. The benchmark (sections 8.1–8.3) and a real GitHub PR are **not built yet**.
 > Numbers in section 0 are measured; every other number in this file is a target until measured.
 
 ---
@@ -51,7 +51,7 @@ Engine test workflows (not shown in the UI): **invoice approval** (LLM extract �
 | Workflow version 6: requirements must use data that exists in the repo; tests must assert; each acceptance criterion needs a failing test | `sdlc/prompts.py`, `sdlc/gates.py` | the red-gate tests below; live run 3 on 7 Nov 2026 |
 | **Demo video** of live run 3: portrait 1080×1350 MP4, 3:11, captions burned in, model wait time sped up 4–20× and labelled. Four captions and one stat label were corrected after recording so they match the run (the script had read the crossed-out total, missed one checks panel and summarised the review wrongly). | `results/video/agentops-linkedin.mp4` (git-ignored); made with `tools/video` (Playwright frame capture + animated overlay, ffmpeg build with sped-up waits, caption patching). The recorder now handles the cases it got wrong, and it waits for a person when review comments are escalated. | watched frame by frame against the run's events; the moved recorder re-checked with an offline run |
 
-### Built (AWS deployment, 8 Nov 2026: written and tested, not applied yet)
+### Built (AWS deployment, 8 Nov 2026: applied and checked live)
 
 | Piece | Where | Proven by |
 |---|---|---|
@@ -63,7 +63,9 @@ Engine test workflows (not shown in the UI): **invoice approval** (LLM extract �
 | Secrets in SSM Parameter Store, set by hand; Terraform creates placeholders and never reads the values | `infra/storage.tf`, `engine/config.py` `_load_ssm` | plan output |
 | CI: tests + chaos, the Lambda images under the emulator, `terraform fmt/validate`. Deploy: after CI passes on `main`, GitHub OIDC (no AWS keys in GitHub) → push 3 images to ECR → update 4 functions → check `/health` | `.github/workflows/ci.yml`, `deploy.yml`, `infra/github_oidc.tf` | actionlint; first CI run on GitHub |
 
-Not checked yet: anything that only exists on real AWS: the Lambda Web Adapter streaming, VPC egress actually blocked, cold-start times, the real bill. That needs `terraform apply`.
+Live on 8 Nov 2026 (ap-south-1, database on Neon's free tier in Singapore). One ShopLite run in the offline replay, done by hand in the browser: 12/12 steps, 3 approvals, the first build sent back by the gates and the second passing, merged in 1 min 48 s (including the time spent approving). The live step graph updated through the streaming function URL, the worker was started only by kicks, and the merged shop on the preview URL took `save10` (Canvas Tote Bag ₹799.00 → ₹719.10). The first `/health` call after deploy took 6.2 s (cold start).
+
+Not checked yet: VPC egress actually blocked from inside the sandbox function, and the real monthly bill.
 
 ### Measured
 
