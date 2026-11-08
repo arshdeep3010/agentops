@@ -102,13 +102,23 @@
   textarea:focus { border-color: var(--border-strong); }
   textarea[readonly] { color: var(--muted); cursor: default; }
   .lock { color: var(--dim); font: 10.5px var(--mono); letter-spacing: .04em; white-space: nowrap; }
-  .lock-note { margin: 12px 0 0; padding: 12px 13px; border-radius: 12px; border: 1px solid var(--border-strong);
-    background: var(--surface-2); font-size: 12.5px; line-height: 1.55; color: var(--muted); }
-  .lock-note b { color: var(--text); }
-  .lock-note a { display: inline-block; margin-top: 8px; color: var(--text); font-weight: 500; text-underline-offset: 3px; }
-  .lock-note.flash { animation: noteIn 320ms var(--ease-out); }
-  @keyframes noteIn { from { opacity: 0; transform: translateY(-4px); } }
-  @media (prefers-reduced-motion: reduce) { .lock-note.flash { animation: none; } }
+  a.pill { color: var(--muted); text-decoration: none; transition: border-color 150ms ease, color 150ms ease; }
+  a.pill:hover { border-color: var(--border-strong); color: var(--text); }
+  a.pill svg { width: 14px; height: 14px; fill: currentColor; }
+  .lock-dialog { width: min(440px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--border-strong); border-radius: var(--radius);
+    background: #0d0d0d; color: var(--muted); box-shadow: 0 24px 80px rgba(0,0,0,0.6); }
+  .lock-dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+  .lock-dialog[open] { animation: dialogIn 260ms var(--ease-out); }
+  @keyframes dialogIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+  @media (prefers-reduced-motion: reduce) { .lock-dialog[open] { animation: none; } }
+  .lock-dialog .in { padding: 22px 22px 18px; font-size: 13px; line-height: 1.6; }
+  .lock-dialog h3 { margin: 0 0 10px; color: var(--text); font: 600 16px/1.3 var(--display); letter-spacing: -0.01em; }
+  .lock-dialog p { margin: 0 0 10px; }
+  .lock-dialog ul { margin: 0 0 12px; padding-left: 18px; }
+  .lock-dialog li { margin: 2px 0; }
+  .lock-dialog b { color: var(--text); font-weight: 500; }
+  .lock-dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .lock-dialog a.btn { text-decoration: none; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .chip {
     height: 26px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; background: transparent;
@@ -314,6 +324,7 @@
     <div class="brand"><span class="mark"><i></i></span>AgentOps <small>AI software team</small></div>
     <div class="nav-right">
       <span class="pill hide-sm">model <b id="modelName">–</b></span>
+      <a class="pill" href="https://github.com/arshdeep3010/agentops" target="_blank" rel="noopener" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><b>GitHub</b></a>
     </div>
   </nav>
 
@@ -328,12 +339,6 @@
             <button class="btn" id="startBtn" style="margin-left:auto">2 · Build it</button>
           </div>
           <p class="hint" id="fakeHint" hidden>Offline demo: the task is fixed and the AI's replies are a recording. The tests, checks and the shop itself are real.</p>
-          <div class="lock-note" id="lockNote" role="status" hidden>
-            <b>This task can't be changed in the demo.</b> To keep it free, the AI's replies are a recording of a real run, so only this task can be replayed.
-            Everything else really runs: the tests-first check, the 9 quality checks in a sealed sandbox, your approvals, and the merged shop you can try.<br>
-            To build your own feature, get the code and run it with your own model key (NVIDIA's API has a free tier).<br>
-            <a href="https://github.com/arshdeep3010/agentops#run-it" target="_blank" rel="noopener">Get the code on GitHub ↗</a>
-          </div>
         </div>
       </section>
 
@@ -389,6 +394,24 @@
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<dialog class="lock-dialog" id="lockNote" aria-labelledby="lockTitle">
+  <div class="in">
+    <h3 id="lockTitle">This task can't be changed in the demo</h3>
+    <p>To keep the demo free, the AI's replies are a <b>recording of a real run</b>, so only this task can be replayed.</p>
+    <p>Everything else really runs:</p>
+    <ul>
+      <li>the tests-first check</li>
+      <li>the 9 quality checks, in a sealed sandbox</li>
+      <li>your approvals</li>
+      <li>the merged shop you can try</li>
+    </ul>
+    <p>To build your own feature, get the code and run it with your own model key (NVIDIA's API has a free tier).</p>
+    <div class="row">
+      <button class="btn ghost small" type="button" id="lockClose">Got it</button>
+      <a class="btn small" href="https://github.com/arshdeep3010/agentops#run-it" target="_blank" rel="noopener">Get the code on GitHub ↗</a>
+    </div>
+  </div>
+</dialog>
 
 <script>
 (() => {
@@ -490,11 +513,10 @@
     $("#fakeHint").hidden = false;
     $("#lockTag").hidden = false;
     $("#ctrlTag").hidden = true;
-    const explain = () => {
-      const note = $("#lockNote");
-      $("#fakeHint").hidden = true;
-      if (note.hidden) { note.hidden = false; note.classList.remove("flash"); void note.offsetWidth; note.classList.add("flash"); }
-    };
+    const dialog = $("#lockNote");
+    const explain = () => { if (!dialog.open) dialog.showModal(); };
+    $("#lockClose").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });  // click outside the card
     box.addEventListener("keydown", (e) => {
       const nav = e.key.startsWith("Arrow") || ["Home", "End", "PageUp", "PageDown", "Tab", "Shift", "Control", "Alt", "Meta", "Escape"].includes(e.key);
       if (!nav && !(e.ctrlKey || e.metaKey)) explain();
