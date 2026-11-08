@@ -1,0 +1,20 @@
+{
+  "captions": [
+    {"id": "checks3", "at": "09:28:41", "until": "09:28:50",
+     "old": ["Review · round 2", "A second AI reviews the diff. Every comment must point at a <em>real changed line</em>, or it's dropped."],
+     "new": ["9 checks ✓ · round 3", "Round 3 passes <em>all 9 checks</em> again. Then the reviewer takes a second look."]},
+    {"id": "review2", "at": "09:28:50", "until": "09:28:54",
+     "old": ["Review", "Verdict: <em>changes</em> · 6 comment(s)."],
+     "new": ["Review · round 2", "The reviewer repeated its old comments word for word, so AgentOps <em>stops the loop</em> and hands them to a person."]},
+    {"id": "merge", "at": "09:29:08", "until": "09:29:13",
+     "old": ["Human in the loop", "Nothing merges without a person. <em>Approve the merge.</em>"],
+     "new": ["Human in the loop", "The open comments point at code that already changed. <em>The person approves the merge.</em>"]},
+    {"id": "works", "at": "09:29:29", "until": "09:29:36",
+     "old": ["It works", "₹3,798.00 → <em>₹3,798.00</em>. 10% off, in any letter case."],
+     "new": ["It works", "Subtotal ₹3,798.00 → discounted total <em>₹3,418.20</em>. 10% off, typed in lowercase."]}
+  ],
+  "card": {
+    "at": "09:29:40", "stat": 1,
+    "html": "<div class=\"k\">Result · real run</div><div class=\"h\">Shipped.</div><div class=\"stats\"><div class=\"stat\"><div class=\"v\">5.5 min</div><div class=\"n\">one sentence → merged feature</div></div><div class=\"stat\"><div class=\"v\">3</div><div class=\"n\">build tries (sent back twice)</div></div><div class=\"stat\"><div class=\"v\">9</div><div class=\"n\">tests written first, then locked</div></div><div class=\"stat\"><div class=\"v\">3</div><div class=\"n\">human approvals</div></div></div><div class=\"f\">model: nemotron-3-ultra-550b-a55b</div>"
+  }
+}

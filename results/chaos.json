@@ -1,0 +1,25 @@
+{
+  "runs": 500,
+  "workers": 3,
+  "lease_s": 2.0,
+  "elapsed_s": 526.7,
+  "runs_by_status": {
+    "done": 500
+  },
+  "worker_kills": 435,
+  "steps_taken_over": 361,
+  "runs_lost": 0,
+  "duplicate_side_effects": 0,
+  "missing_side_effects": 0,
+  "ledger_requests_per_run": 1.118,
+  "tool_results_reused": 46,
+  "stale_results_discarded": 0,
+  "extra_attempts_per_step": 0.18,
+  "resume_after_kill_s": {
+    "median": 1.91,
+    "p95": 2.36,
+    "max": 10.26,
+    "samples": 433
+  },
+  "steps_per_s": 3.8
+}

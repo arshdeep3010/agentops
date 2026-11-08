@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is git-ignored.
+
+github_repo = "your-github-username/agentops"
+
+# First apply: false. Then push the images (Deploy workflow), set true, apply again.
+create_functions = false
+
+# Optional
+# aws_region                  = "ap-south-1"
+# create_github_oidc_provider = false   # if the account already has the GitHub OIDC provider
+# github_sub_prefix           = "repo:owner@123/name@456"   # gh api repos/OWNER/NAME/actions/oidc/customization/sub
+# llm_mode                    = "fake"  # "live" calls the model with the key you put in SSM
+# max_runs_per_day            = 30
+# sweep_minutes               = 15
+# budget_email                = "you@example.com"
+# budget_usd                  = 5

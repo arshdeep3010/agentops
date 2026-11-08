@@ -1,0 +1,44 @@
+# Local stack: Postgres + API (serves the UI) + 3 workers.
+#   docker compose up -d db            # just the database (tests, local dev)
+#   docker compose up --build          # everything; kill a worker with: docker compose kill worker2
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: agentops
+      POSTGRES_PASSWORD: agentops   # dev-only credentials
+      POSTGRES_DB: agentops
+    ports: ["54329:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentops"]
+      interval: 2s
+      retries: 20
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  api:
+    build: .
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    environment: &env
+      DATABASE_URL: postgresql://agentops:agentops@db:5432/agentops
+      LLM_MODE: ${LLM_MODE:-fake}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LEASE_SECONDS: ${LEASE_SECONDS:-6}
+      SPAWN_WORKERS: "0"
+    ports: ["8000:8000"]
+    depends_on: {db: {condition: service_healthy}}
+
+  worker1: &worker
+    build: .
+    command: python -m engine.worker --id worker1
+    environment: *env
+    depends_on: {api: {condition: service_started}}
+    restart: unless-stopped
+  worker2:
+    <<: *worker
+    command: python -m engine.worker --id worker2
+  worker3:
+    <<: *worker
+    command: python -m engine.worker --id worker3
+
+volumes:
+  pgdata:

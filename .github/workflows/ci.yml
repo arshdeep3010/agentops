@@ -1,0 +1,74 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: agentops
+          POSTGRES_PASSWORD: agentops
+          POSTGRES_DB: agentops
+        ports: ["54329:5432"]
+        options: >-
+          --health-cmd "pg_isready -U agentops" --health-interval 2s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      # The sandbox image the SDLC gates run generated code in.
+      - run: docker build -t agentops-sandbox:2 sandbox
+      # Engine + API tests against real Postgres; fake model, no keys, no network.
+      - run: pytest -q
+      # A short chaos run on every push: real worker processes killed at random.
+      - run: pytest -m chaos -s -q
+        env:
+          CHAOS_RUNS: "40"
+
+  # The AWS images: the sandbox and preview handlers run under the Lambda emulator
+  # that ships in the AWS base image, and the real gate scripts run through them.
+  lambda-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: docker build -f sandbox/lambda.Dockerfile -t agentops-sandbox-lambda .
+      - name: Start the emulators (non-root, like Lambda)
+        run: |
+          docker run -d --user 1000:1000 -e AWS_SECRET_ACCESS_KEY=should-not-reach-the-script \
+            -p 9101:8080 agentops-sandbox-lambda
+          docker run -d --user 1000:1000 -p 9102:8080 agentops-sandbox-lambda lambda_preview.handler
+          sleep 2
+      - run: pytest -q tests/test_lambda_images.py
+        env:
+          SANDBOX_RIE: http://localhost:9101
+          PREVIEW_RIE: http://localhost:9102
+      # The API and worker images must build too (deploy.yml pushes them).
+      - run: docker build -f lambda.Dockerfile --target api -t agentops-api .
+      - run: docker build -f lambda.Dockerfile --target worker -t agentops-worker .
+
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate

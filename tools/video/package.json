@@ -1,0 +1,12 @@
+{
+  "name": "agentops-video",
+  "private": true,
+  "description": "Records the AgentOps demo video (LinkedIn, portrait 4:5).",
+  "scripts": {
+    "record": "node linkedin.js",
+    "patches": "node render_patches.js"
+  },
+  "dependencies": {
+    "playwright": "1.64.0"
+  }
+}

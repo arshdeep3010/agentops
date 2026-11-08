@@ -1,0 +1,6 @@
+# Trusted coverage config, outside the workspace so generated code can't change it.
+[run]
+data_file = /tmp/.coverage
+dynamic_context = test_function
+source = /workspace
+omit = /workspace/tests/*
