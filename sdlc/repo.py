@@ -81,6 +81,9 @@ def load(base: Path) -> dict[str, str]:
 def materialize(files: dict[str, str]) -> Path:
     """Write files into a fresh temp folder (the caller deletes it)."""
     root = Path(tempfile.mkdtemp(prefix="agentops-ws-"))
+    # mkdtemp makes it 0700 for our user; the sandbox container runs as uid 1000 and must read it.
+    # (Docker Desktop on Windows hides this; a Linux host doesn't.) It's mounted read-only anyway.
+    root.chmod(0o755)
     for rel, content in files.items():
         target = root / safe_path(rel)
         target.parent.mkdir(parents=True, exist_ok=True)

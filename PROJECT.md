@@ -1,6 +1,6 @@
 # AgentOps: everything about the project
 
-> **Status:** milestone 1 (the durable engine) and milestone 2 (the SDLC pipeline) are **built and tested**: see section 0. The ShopLite coupon task has run live on NVIDIA Nemotron and merged (7 Nov 2026), and a demo video of that run exists. The benchmark (sections 8.1–8.3) and a real GitHub PR are **not built yet**.
+> **Status:** milestone 1 (the durable engine) and milestone 2 (the SDLC pipeline) are **built and tested**: see section 0. The ShopLite coupon task has run live on NVIDIA Nemotron and merged (7 Nov 2026), and a demo video of that run exists. It's a public repo (github.com/arshdeep3010/agentops) and **deployable** to AWS Lambda with Terraform and GitHub Actions (section 0, "AWS deployment"); not applied to an AWS account yet. The benchmark (sections 8.1–8.3) and a real GitHub PR are **not built yet**.
 > Numbers in section 0 are measured; every other number in this file is a target until measured.
 
 ---
@@ -51,6 +51,20 @@ Engine test workflows (not shown in the UI): **invoice approval** (LLM extract �
 | Workflow version 6: requirements must use data that exists in the repo; tests must assert; each acceptance criterion needs a failing test | `sdlc/prompts.py`, `sdlc/gates.py` | the red-gate tests below; live run 3 on 7 Nov 2026 |
 | **Demo video** of live run 3: portrait 1080×1350 MP4, 3:11, captions burned in, model wait time sped up 4–20× and labelled. Four captions and one stat label were corrected after recording so they match the run (the script had read the crossed-out total, missed one checks panel and summarised the review wrongly). | `results/video/agentops-linkedin.mp4` (git-ignored); made with `tools/video` (Playwright frame capture + animated overlay, ffmpeg build with sped-up waits, caption patching). The recorder now handles the cases it got wrong, and it waits for a person when review comments are escalated. | watched frame by frame against the run's events; the moved recorder re-checked with an offline run |
 
+### Built (AWS deployment, 8 Nov 2026: written and tested, not applied yet)
+
+| Piece | Where | Proven by |
+|---|---|---|
+| Terraform for four Lambda functions: the API (the same FastAPI app behind the Lambda Web Adapter, streaming function URL for SSE), an on-demand worker, the gate sandbox and the shop preview (both in a VPC with no internet route) | `infra/*.tf`, `infra/README.md` | `terraform validate`; `terraform plan` against the AWS account (38 resources, then 52 with the functions) |
+| Serverless worker: the API "kicks" it when it creates work (new run, approval, replay); it drains the queue, then exits; it hands over to a fresh copy before the 15-min limit; a schedule sweeps every 15 min. A function killed mid-step is just a crashed worker: lease, reclaim, fencing | `engine/lambda_worker.py`, `runs.next_work_in`, `api/main.py` `kick` | `tests/test_aws_mode.py`; a full ShopLite run with the worker in its Lambda image under the Lambda emulator: 12 steps, 3 approvals, a sent-back build, merged in 18 s, started only by kicks |
+| Lambda sandbox: same gate scripts; the files travel in the request; scrubbed environment (no AWS credentials), own process group killed afterwards, process and file-size limits, timeout, /tmp wiped; network blocked by the VPC | `sdlc/sandbox.py` `_run_lambda`, `sandbox/lambda_sandbox.py`, `infra/network.tf` | `tests/test_lambda_images.py` (real tests + coverage through the emulator, env scrubbed, timeout); CI job `lambda-images` |
+| Preview function: its own URL; serves the original shop from the image or the merged one from S3, copied by the merge step only after a person approves | `sandbox/lambda_preview.py`, `sdlc_merge_local` | `tests/test_lambda_images.py` |
+| Public-demo limits: offline replay by default, only the `sdlc` workflow, 30 runs a day; streams end after 10 min and resume from `Last-Event-ID` | `engine/config.py`, `api/main.py` | `tests/test_aws_mode.py` |
+| Secrets in SSM Parameter Store, set by hand; Terraform creates placeholders and never reads the values | `infra/storage.tf`, `engine/config.py` `_load_ssm` | plan output |
+| CI: tests + chaos, the Lambda images under the emulator, `terraform fmt/validate`. Deploy: after CI passes on `main`, GitHub OIDC (no AWS keys in GitHub) → push 3 images to ECR → update 4 functions → check `/health` | `.github/workflows/ci.yml`, `deploy.yml`, `infra/github_oidc.tf` | actionlint; first CI run on GitHub |
+
+Not checked yet: anything that only exists on real AWS: the Lambda Web Adapter streaming, VPC egress actually blocked, cold-start times, the real bill. That needs `terraform apply`.
+
 ### Measured
 
 Chaos test, 4 Nov 2026: `CHAOS_RUNS=500 pytest -m chaos -s`. Three worker processes were hard-killed at random (TerminateProcess, no cleanup) about once a second and restarted 1 s later. Lease: 2 s. Raw output is in `results/chaos.json`.
@@ -91,7 +105,7 @@ Caveats: it used the offline fake model, and the test steps sleep 0.1–0.6 s on
 - Repos other than the bundled examples (cloning a GitHub repo into the sandbox)
 - Next.js + React Flow UI (milestone 1 uses one static page served by FastAPI)
 - Routing model calls through the LLM Gateway (calls go straight to NVIDIA for now)
-- Deployment
+- Applying the AWS deployment (it's written, planned and tested locally; see above)
 
 ### Design choices made while building
 
@@ -499,6 +513,8 @@ AI-written code is untrusted. It **never** runs on the host.
 | User | Non-root |
 | Secrets | None inside the container. The GitHub token stays in the worker, which opens the PR itself. |
 
+On AWS the same gate scripts run in a separate Lambda function instead (`sandbox/lambda_sandbox.py`): network blocked by a VPC with no internet route and a security group with no outbound rules; no IAM permissions beyond logs and its network interface; a scrubbed environment for the script; its process group killed after each call; `/tmp` wiped. Lambda doesn't offer Docker's read-only mounts or `--cap-drop`, so the workspace is rebuilt from the request every call instead.
+
 ---
 
 ## 7. The UI
@@ -590,10 +606,10 @@ A mix of: new FastAPI endpoints, pure functions with edge cases, bug fixes, refa
 | Frontend | Milestone 1: one static page. Planned: Next.js, React Flow, Tailwind | Graph rendering, modern full-stack signal |
 | LLM | Through the **LLM Gateway** → NVIDIA Nemotron (free), switchable | Fallback, budgets, one-line model change |
 | Validation | pydantic | Schemas for every LLM output |
-| Sandbox | Docker | Isolation |
+| Sandbox | Docker locally; on AWS a Lambda function in a VPC with no internet route | Isolation |
 | Gates | pytest, ruff, mypy, coverage.py, bandit (pinned in the sandbox image) | Standard, trusted tools |
 | GitHub | GitHub REST API (fine-grained token, one repo) | Open PRs |
-| Ship | Docker Compose (API + 3 workers + Postgres), GitHub Actions, Render | Same as FitCheck |
+| Ship | Docker Compose locally; AWS Lambda (4 functions) + ECR + S3 + SSM via Terraform, deployed by GitHub Actions with OIDC; any Postgres (e.g. Neon free tier) | Nothing billed by the hour: no NAT, load balancer or RDS |
 
 Cost: ₹0 on free tiers; benchmark runs on the free NVIDIA model.
 
@@ -615,6 +631,8 @@ agentops/
 │   ├── context.py         StepContext: check/sleep, idempotent call_tool, error classes
 │   ├── llm.py             OpenAI-compatible client, JSON extraction
 │   ├── worker.py          claim → heartbeat thread → run step kind → record (fenced)
+│   ├── lambda_worker.py   the worker as a Lambda handler: drain the queue, exit, hand over
+│   ├── aws.py             the few AWS calls (invoke, S3 put), boto3 imported lazily
 │   └── supervisor.py      dev/demo: start, hard-kill and restart worker processes
 ├── workflows/             invoice.py · chaos.py (engine test workflows, not in the UI)
 ├── sdlc/
@@ -623,15 +641,20 @@ agentops/
 │   ├── prompts.py         one prompt per phase (the worker adds the "data, not instructions" rule)
 │   ├── schemas.py         pydantic schemas for every phase's model output
 │   ├── gates.py           red check (tests first), test lock, scope lock, quality checks
-│   ├── sandbox.py         locked-down Docker runner
+│   ├── sandbox.py         locked-down runner: Docker locally, the sandbox Lambda on AWS
 │   ├── repo.py            load example repos, build workspaces, diffs, changed lines
 │   ├── fakes.py           offline model replies (refunds task on shop)
 │   ├── fakes_shoplite.py  offline model replies (coupons task on ShopLite)
 │   ├── preview.py         "Open the shop": run the example or merged code on 127.0.0.1:8830
 │   └── examples/          shop/ (Python library) · shoplite/ (FastAPI shop + one web page)
-├── sandbox/               Dockerfile + coveragerc for the sandbox image
+├── sandbox/               Dockerfile + coveragerc for the sandbox image; lambda.Dockerfile,
+│                          lambda_sandbox.py, lambda_preview.py for the AWS sandbox and preview
+├── infra/                 Terraform for AWS (README.md has the deploy steps)
+├── .github/workflows/     ci.yml (tests, chaos, Lambda images, terraform) · deploy.yml
+├── lambda.Dockerfile      API and worker images for Lambda
 ├── api/                   main.py (REST + SSE) · static/index.html (UI)
-├── tests/                 test_engine.py · test_api.py · test_sdlc.py · chaos/test_chaos.py
+├── tests/                 test_engine.py · test_api.py · test_sdlc.py · test_aws_mode.py ·
+│                          test_lambda_images.py · chaos/test_chaos.py
 ├── tools/video/           demo-video recorder: linkedin.js + overlay.js (record), build.py (MP4),
 │                          patch.py + render_patches.js + patches.json (caption fixes), README.md
 ├── results/               chaos.json (kept) · sdlc/<run>/ PR.md, changes.patch, merged/ (git-ignored)
