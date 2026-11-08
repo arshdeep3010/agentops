@@ -23,11 +23,31 @@ In offline mode (`LLM_MODE=fake`) the model's replies for this task are a record
 docker compose up -d db                      # Postgres on localhost:54329
 docker build -t agentops-sandbox:2 sandbox   # the sandbox the AI's code runs in
 python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # Windows; use .venv/bin on macOS/Linux
-cp .env.example .env                         # offline replay, 3 workers
+cp .env.example .env                         # offline replay, 3 workers (see live mode below)
 .venv/Scripts/python -m uvicorn api.main:app --port 8820
 ```
 
-Open http://localhost:8820 and follow the four steps above. To use the real model instead of the offline replay: set `LLM_MODE=live` and `LLM_API_KEY` in `.env` (NVIDIA's free API works).
+Open http://localhost:8820 and follow the four steps above. This starts in offline mode (`LLM_MODE=fake`), the same as the live demo: the task box is locked to the recorded coupon task.
+
+### Build your own feature (live mode)
+
+To type your own task, switch to live mode so a real model writes the code:
+
+1. Get a free API key from NVIDIA at https://build.nvidia.com (or use any OpenAI-compatible API).
+2. In your `.env`, set:
+   ```bash
+   LLM_MODE=live
+   LLM_API_KEY=your-key-here
+   ```
+   For another provider, also change `LLM_BASE_URL` and `LLM_MODEL`.
+3. Restart the server (stop uvicorn and run the last command again). The header now shows the model's name instead of "offline replay", and the task box is unlocked.
+4. Type a feature for the ShopLite shop, for example: *"Don't let shoppers add more of a product than is in stock."* Then press **Build it** and approve each step as before.
+
+Things to know:
+- Your key stays on your machine: `.env` is git-ignored.
+- The AI's code only ever runs in the sandbox container, never on your machine directly.
+- A real model is slower and less predictable than the replay. The recorded live run took 5.5 min and 3 builds on NVIDIA's free tier. If the checks keep failing, the run stops and asks you instead of merging.
+- Tasks are for the ShopLite example (`sdlc/examples/shoplite`). The 30-runs-a-day limit only applies to the hosted demo.
 
 ## Deploy it to AWS
 
