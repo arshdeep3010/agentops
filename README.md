@@ -13,7 +13,7 @@
 3. Approve the requirements, then the design. Tests are written first and fail, then get locked. The first build refuses `save10` in lowercase; the locked tests catch it and send it back. The second build passes all 9 checks, and a PR is written with a traceability matrix.
 4. Approve the merge, then press **Open the shop**. The cart now has a coupon box: two Desk Lamps (₹3,798.00) with `save10` cost ₹3,418.20.
 
-In offline mode (`LLM_MODE=fake`) the model's replies for this task are a recorded replay, so the demo runs the same way every time without an API key. The sandbox, checks, tests and merged shop are real. With `LLM_MODE=live`, you can type your own task.
+In offline mode (`LLM_MODE=fake`) the model's replies for this task are a recorded replay, so the demo runs the same way every time without an API key. The sandbox, checks, tests and merged shop are real. Because only this task was recorded, the task box is locked in offline mode (the API refuses any other task too). With `LLM_MODE=live`, you can type your own task.
 
 **Live run, 7 Nov 2026** (NVIDIA `nemotron-3-ultra-550b-a55b`): the coupon task merged in 5.5 min after 3 builds. One locked test caught the first build, and the AI reviewer sent the second one back. In the merged shop, `save10` on two Desk Lamps charges ₹3,418.20. Two earlier live attempts that day stopped at the tests-first check, which led to two fixes. The details are in [PROJECT.md](PROJECT.md) under "Live ShopLite runs".
 

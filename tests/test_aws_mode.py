@@ -31,6 +31,22 @@ def test_public_limits_allowed_workflows_and_daily_runs(pool, settings):
         assert r.status_code == 429 and "2 tasks a day" in r.json()["detail"]
 
 
+
+def test_offline_replay_only_runs_the_recorded_task(pool, settings):
+    from sdlc import fakes_shoplite
+
+    assert settings.llm_mode == "fake"
+    with TestClient(create_app(settings)) as c:
+        mine = c.post("/api/runs", json={"workflow": "sdlc", "input": {"task": "Add a wishlist page to the shop",
+                                                                       "example": "shoplite"}})
+        assert mine.status_code == 400 and "recording of a real run" in mine.json()["detail"]
+        other_repo = {"task": fakes_shoplite.TASK, "example": "shop"}
+        assert c.post("/api/runs", json={"workflow": "sdlc", "input": other_repo}).status_code == 400
+        spaced = "  " + fakes_shoplite.TASK.replace(". ", ".\n") + "\n"   # whitespace doesn't matter
+        ok = c.post("/api/runs", json={"workflow": "sdlc", "input": {"task": spaced, "example": "shoplite"}})
+        assert ok.status_code == 201
+        runs.cancel_run(pool, ok.json()["id"])
+
 def test_new_work_kicks_the_worker_function(pool, settings, worker, monkeypatch):
     kicks = []
     monkeypatch.setattr("engine.aws.invoke_async", lambda fn, payload: kicks.append((fn, payload["source"])))

@@ -100,6 +100,15 @@
     font: 12.5px/1.6 var(--mono); transition: border-color 150ms ease;
   }
   textarea:focus { border-color: var(--border-strong); }
+  textarea[readonly] { color: var(--muted); cursor: default; }
+  .lock { color: var(--dim); font: 10.5px var(--mono); letter-spacing: .04em; white-space: nowrap; }
+  .lock-note { margin: 12px 0 0; padding: 12px 13px; border-radius: 12px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+  .lock-note b { color: var(--text); }
+  .lock-note a { display: inline-block; margin-top: 8px; color: var(--text); font-weight: 500; text-underline-offset: 3px; }
+  .lock-note.flash { animation: noteIn 320ms var(--ease-out); }
+  @keyframes noteIn { from { opacity: 0; transform: translateY(-4px); } }
+  @media (prefers-reduced-motion: reduce) { .lock-note.flash { animation: none; } }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .chip {
     height: 26px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; background: transparent;
@@ -311,14 +320,20 @@
   <div class="layout">
     <aside>
       <section class="card" aria-labelledby="newRunLabel">
-        <div class="card-h"><span class="label" id="newRunLabel">Task for the ShopLite shop</span><kbd>Ctrl ↵</kbd></div>
+        <div class="card-h"><span class="label" id="newRunLabel">Task for the ShopLite shop</span><span class="lock" id="lockTag" hidden>fixed task</span><kbd id="ctrlTag">Ctrl ↵</kbd></div>
         <div class="pad">
           <button class="btn ghost small" id="openOriginal" type="button">1 · See the shop as it is now ↗</button>
           <textarea id="task" spellcheck="false" aria-label="What should be built"></textarea>
           <div class="row">
             <button class="btn" id="startBtn" style="margin-left:auto">2 · Build it</button>
           </div>
-          <p class="hint" id="fakeHint" hidden>Offline mode: the AI's replies for this sample task are a recording. The tests, checks and the shop itself are real.</p>
+          <p class="hint" id="fakeHint" hidden>Offline demo: the task is fixed and the AI's replies are a recording. The tests, checks and the shop itself are real.</p>
+          <div class="lock-note" id="lockNote" role="status" hidden>
+            <b>This task can't be changed in the demo.</b> To keep it free, the AI's replies are a recording of a real run, so only this task can be replayed.
+            Everything else really runs: the tests-first check, the 9 quality checks in a sealed sandbox, your approvals, and the merged shop you can try.<br>
+            To build your own feature, get the code and run it with your own model key (NVIDIA's API has a free tier).<br>
+            <a href="https://github.com/arshdeep3010/agentops#run-it" target="_blank" rel="noopener">Get the code on GitHub ↗</a>
+          </div>
         </div>
       </section>
 
@@ -467,7 +482,28 @@
   /* ---------- composer ---------- */
   const EXAMPLE = "shoplite";
   $("#task").value = "Add discount coupons. The code SAVE10 takes 10% off the cart at checkout, in any letter case. Show a coupon box in the cart, and reject codes the shop doesn't know.";
-  api("/health").then((h) => { $("#fakeHint").hidden = h.llm_mode !== "fake"; }).catch(() => {});
+  // Offline replay: only the recorded task can run, so the box is read-only and says why if someone tries to edit it.
+  function lockTask() {
+    const box = $("#task");
+    box.readOnly = true;
+    box.setAttribute("aria-describedby", "fakeHint");
+    $("#fakeHint").hidden = false;
+    $("#lockTag").hidden = false;
+    $("#ctrlTag").hidden = true;
+    const explain = () => {
+      const note = $("#lockNote");
+      $("#fakeHint").hidden = true;
+      if (note.hidden) { note.hidden = false; note.classList.remove("flash"); void note.offsetWidth; note.classList.add("flash"); }
+    };
+    box.addEventListener("keydown", (e) => {
+      const nav = e.key.startsWith("Arrow") || ["Home", "End", "PageUp", "PageDown", "Tab", "Shift", "Control", "Alt", "Meta", "Escape"].includes(e.key);
+      if (!nav && !(e.ctrlKey || e.metaKey)) explain();
+    });
+    ["paste", "cut", "drop"].forEach((t) => box.addEventListener(t, (e) => { e.preventDefault(); explain(); }));
+    box.addEventListener("dblclick", explain);
+    box.addEventListener("pointerup", (e) => { if (e.pointerType === "touch") explain(); });  // phones: no keyboard opens
+  }
+  api("/health").then((h) => { if (h.llm_mode === "fake") lockTask(); }).catch(() => {});
 
   // Open a preview in a new tab. The tab is opened first, on the click, so popup blockers allow it.
   async function openShop(path) {

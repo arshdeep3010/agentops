@@ -34,8 +34,12 @@ from engine.config import Settings, get_settings
 from engine.db import make_pool, migrate
 from engine.supervisor import Supervisor
 from engine.workflow import WORKFLOWS
-from sdlc import preview, repo
+from sdlc import fakes_shoplite, preview, repo
 from sdlc import workflow as sdlc_workflow
+
+REPLAY_ONLY = ("This demo can't change the task: to keep it free, the AI's replies are a recording of a real run "
+               "of the coupon task. The tests, checks, sandbox, approvals and merged shop are real. To build your own "
+               "feature, run it from https://github.com/arshdeep3010/agentops with LLM_MODE=live and your own key.")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("agentops.api")
@@ -158,6 +162,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(429, f"this demo runs at most {settings.max_runs_per_day} tasks a day; "
                                      "try again tomorrow, or run it locally (see the README)")
 
+    def is_recorded_task(data: dict) -> bool:
+        """Offline replay has the AI's replies for one task only; any other task would get them anyway."""
+        task = " ".join(str(data.get("task", "")).split())
+        return data.get("example") == "shoplite" and task == fakes_shoplite.TASK
+
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:
         return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
@@ -174,6 +183,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(404, f"unknown workflow {body.workflow!r}")
         if len(json.dumps(body.input)) > 20_000:
             raise HTTPException(413, "input too large")
+        if settings.llm_mode == "fake" and body.workflow == "sdlc" and not is_recorded_task(body.input):
+            raise HTTPException(400, REPLAY_ONLY)
         check_quota(request)
         run_id = runs.create_run(pool(request), body.workflow, body.input, budget_inr=body.budget_inr)
         kick("run_started")
