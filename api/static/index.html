@@ -338,7 +338,7 @@
           <div class="row">
             <button class="btn" id="startBtn" style="margin-left:auto">2 · Build it</button>
           </div>
-          <p class="hint" id="fakeHint" hidden>Offline demo: the task is fixed and the AI's replies are a recording. The tests, checks and the shop itself are real.</p>
+          <p class="hint" id="fakeHint" hidden>Offline demo: the task is fixed and the AI's replies are pre-written. The tests, checks and the shop itself are real.</p>
         </div>
       </section>
 
@@ -397,7 +397,7 @@
 <dialog class="lock-dialog" id="lockNote" aria-labelledby="lockTitle">
   <div class="in">
     <h3 id="lockTitle">This task can't be changed in the demo</h3>
-    <p>To keep the demo free, the AI's replies are a <b>recording of a real run</b>, so only this task can be replayed.</p>
+    <p>To keep the demo free, the AI's replies are <b>pre-written for this one task</b>, so it can't be changed.</p>
     <p>Everything else really runs:</p>
     <ul>
       <li>the tests-first check</li>
@@ -505,7 +505,7 @@
   /* ---------- composer ---------- */
   const EXAMPLE = "shoplite";
   $("#task").value = "Add discount coupons. The code SAVE10 takes 10% off the cart at checkout, in any letter case. Show a coupon box in the cart, and reject codes the shop doesn't know.";
-  // Offline replay: only the recorded task can run, so the box is read-only and says why if someone tries to edit it.
+  // Offline replay: only the pre-written task can run, so the box is read-only and says why if someone tries to edit it.
   function lockTask() {
     const box = $("#task");
     box.readOnly = true;

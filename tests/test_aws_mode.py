@@ -39,7 +39,7 @@ def test_offline_replay_only_runs_the_recorded_task(pool, settings):
     with TestClient(create_app(settings)) as c:
         mine = c.post("/api/runs", json={"workflow": "sdlc", "input": {"task": "Add a wishlist page to the shop",
                                                                        "example": "shoplite"}})
-        assert mine.status_code == 400 and "recording of a real run" in mine.json()["detail"]
+        assert mine.status_code == 400 and "pre-written for the coupon" in mine.json()["detail"]
         other_repo = {"task": fakes_shoplite.TASK, "example": "shop"}
         assert c.post("/api/runs", json={"workflow": "sdlc", "input": other_repo}).status_code == 400
         spaced = "  " + fakes_shoplite.TASK.replace(". ", ".\n") + "\n"   # whitespace doesn't matter

@@ -37,8 +37,8 @@ from engine.workflow import WORKFLOWS
 from sdlc import fakes_shoplite, preview, repo
 from sdlc import workflow as sdlc_workflow
 
-REPLAY_ONLY = ("This demo can't change the task: to keep it free, the AI's replies are a recording of a real run "
-               "of the coupon task. The tests, checks, sandbox, approvals and merged shop are real. To build your own "
+REPLAY_ONLY = ("This demo can't change the task: to keep it free, the AI's replies are pre-written for the coupon "
+               "task only. The tests, checks, sandbox, approvals and merged shop are real. To build your own "
                "feature, run it from https://github.com/arshdeep3010/agentops with LLM_MODE=live and your own key.")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

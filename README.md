@@ -2,7 +2,7 @@
 
 **Describe a feature in one sentence, and AgentOps builds it like a small software team:** it writes the requirements, the design and the tests first, then writes the code, checks it in a Docker sandbox, and asks you before anything is merged.
 
-> **Status:** built and tested offline, with AI-written code running only in a sandbox (Docker locally, a sealed Lambda function on AWS). Deployed to AWS Lambda with Terraform and GitHub Actions ([infra/README.md](infra/README.md)); **[try the live demo](https://ncf7tzviny6x7qkw7aaxk7xszq0lvnbk.lambda-url.ap-south-1.on.aws/)** (a recorded replay of the AI's replies; the sandbox, checks and shop are real). Not built yet: the SDLC-vs-one-shot benchmark and a real GitHub PR (the PR is written locally for now). See [PROJECT.md](PROJECT.md) section 0.
+> **Status:** built and tested offline, with AI-written code running only in a sandbox (Docker locally, a sealed Lambda function on AWS). Deployed to AWS Lambda with Terraform and GitHub Actions ([infra/README.md](infra/README.md)); **[try the live demo](https://ncf7tzviny6x7qkw7aaxk7xszq0lvnbk.lambda-url.ap-south-1.on.aws/)** (the AI's replies are pre-written; the sandbox, checks and shop are real). Not built yet: the SDLC-vs-one-shot benchmark and a real GitHub PR (the PR is written locally for now). See [PROJECT.md](PROJECT.md) section 0.
 
 ## The demo: one sentence in, a working feature out
 
@@ -13,7 +13,7 @@
 3. Approve the requirements, then the design. Tests are written first and fail, then get locked. The first build refuses `save10` in lowercase; the locked tests catch it and send it back. The second build passes all 9 checks, and a PR is written with a traceability matrix.
 4. Approve the merge, then press **Open the shop**. The cart now has a coupon box: two Desk Lamps (₹3,798.00) with `save10` cost ₹3,418.20.
 
-In offline mode (`LLM_MODE=fake`) the model's replies for this task are a recorded replay, so the demo runs the same way every time without an API key. The sandbox, checks, tests and merged shop are real. Because only this task was recorded, the task box is locked in offline mode (the API refuses any other task too). With `LLM_MODE=live`, you can type your own task.
+In offline mode (`LLM_MODE=fake`) the model's replies for this task are pre-written (`sdlc/fakes_shoplite.py`), so the demo runs the same way every time without an API key. The sandbox, checks, tests and merged shop are real. Because only this task has replies, the task box is locked in offline mode (the API refuses any other task too). With `LLM_MODE=live`, you can type your own task.
 
 **Live run, 7 Nov 2026** (NVIDIA `nemotron-3-ultra-550b-a55b`): the coupon task merged in 5.5 min after 3 builds. One locked test caught the first build, and the AI reviewer sent the second one back. In the merged shop, `save10` on two Desk Lamps charges ₹3,418.20. Two earlier live attempts that day stopped at the tests-first check, which led to two fixes. The details are in [PROJECT.md](PROJECT.md) under "Live ShopLite runs".
 
@@ -27,7 +27,7 @@ cp .env.example .env                         # offline replay, 3 workers (see li
 .venv/Scripts/python -m uvicorn api.main:app --port 8820
 ```
 
-Open http://localhost:8820 and follow the four steps above. This starts in offline mode (`LLM_MODE=fake`), the same as the live demo: the task box is locked to the recorded coupon task.
+Open http://localhost:8820 and follow the four steps above. This starts in offline mode (`LLM_MODE=fake`), the same as the live demo: the task box is locked to the coupon task.
 
 ### Build your own feature (live mode)
 
@@ -46,7 +46,7 @@ To type your own task, switch to live mode so a real model writes the code:
 Things to know:
 - Your key stays on your machine: `.env` is git-ignored.
 - The AI's code only ever runs in the sandbox container, never on your machine directly.
-- A real model is slower and less predictable than the replay. The recorded live run took 5.5 min and 3 builds on NVIDIA's free tier. If the checks keep failing, the run stops and asks you instead of merging.
+- A real model is slower and less predictable than the replay. The live run on 7 Nov took 5.5 min and 3 builds on NVIDIA's free tier. If the checks keep failing, the run stops and asks you instead of merging.
 - Tasks are for the ShopLite example (`sdlc/examples/shoplite`). The 30-runs-a-day limit only applies to the hosted demo.
 
 ## Deploy it to AWS

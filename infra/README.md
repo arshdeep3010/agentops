@@ -35,7 +35,7 @@ in Lambda's always-free monthly allowance. The fixed cost is ECR image storage: 
 3 images each. That's an estimate, not a measured bill; set `budget_email` to get an alert.
 
 The defaults keep a public demo cheap and safe:
-- `llm_mode = "fake"`: the recorded offline replay. No model calls, no key needed.
+- `llm_mode = "fake"`: the offline replay (pre-written model replies). No model calls, no key needed.
 - `max_runs_per_day = 30`: the API refuses new runs after that.
 - Only the `sdlc` workflow can be started.
 
