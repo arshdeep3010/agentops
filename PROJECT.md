@@ -1,6 +1,6 @@
 # AgentOps: everything about the project
 
-> **Status:** milestone 1 (the durable engine) and milestone 2 (the SDLC pipeline) are **built and tested**: see section 0. The ShopLite coupon task has run live on NVIDIA Nemotron and merged (7 Nov 2026), and a demo video of that run exists. It's a public repo (github.com/arshdeep3010/agentops) and ****deployed** to AWS Lambda with Terraform and GitHub Actions (section 0, "AWS deployment"). The public demo runs the offline replay of the coupon task. The benchmark (sections 8.1–8.3) and a real GitHub PR are **not built yet**.
+> **Status:** milestone 1 (the durable engine) and milestone 2 (the SDLC pipeline) are **built and tested**: see section 0. The ShopLite coupon task has run live on NVIDIA Nemotron and merged (7 Nov 2026), and a demo video of that run exists. It's a public repo (github.com/arshdeep3010/agentops) and **deployed** to AWS Lambda with Terraform and GitHub Actions (section 0, "AWS deployment"). The public demo runs the offline replay of the coupon task. The benchmark (sections 8.1–8.3) and a real GitHub PR are **not built yet**.
 > Numbers in section 0 are measured; every other number in this file is a target until measured.
 
 ---
@@ -107,7 +107,6 @@ Caveats: it used the offline fake model, and the test steps sleep 0.1–0.6 s on
 - Repos other than the bundled examples (cloning a GitHub repo into the sandbox)
 - Next.js + React Flow UI (milestone 1 uses one static page served by FastAPI)
 - Routing model calls through the LLM Gateway (calls go straight to NVIDIA for now)
-- Applying the AWS deployment (it's written, planned and tested locally; see above)
 
 ### Design choices made while building
 
